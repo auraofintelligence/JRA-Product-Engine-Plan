@@ -39,3 +39,9 @@ Style: crisp clean graphic emblem with extremely simple strong geometry, nearly 
 Composition: square 1:1, centred emblem fills roughly 65 percent of canvas; generous clear purple edge, legible at tiny sizes. Deep purple background fills whole canvas with softly rounded square treatment.
 Constraints: no letters, words, logos of existing companies, fine strokes, tiny details, leaves with veins, watermark or extra objects.
 
+
+## workbench-journey
+
+Built-in image_gen tool, generated 28 September 2026. Saved as dist/assets/workbench-journey.png. Concept artwork, not a product photograph.
+
+Use case: stylized-concept. Asset type: wide website workbench process illustration, 1536x1024 landscape. Create an exquisite editorial 3D miniature of a joyful future product studio on a warm ivory tabletop: a flowing translucent lavender glass ribbon physically connects three carefully composed islands, from a notebook with blank sketches and lavender fabric swatches on left, to a crafted reusable bottle and small drink tasting glasses and folded garment in centre, to a little circular refill garden with green plants and reusable containers on right. Royal purple, lilac glass, soft sage, tiny champagne metal details, healthy luminous daylight. Tactile materials, convincing shadows, ethereal but practical. The journey is readable at small size; uncluttered curated objects with generous negative space, no people, no lettering, no labels, no logos, no watermark. Full bleed beautiful background, landscape composition.

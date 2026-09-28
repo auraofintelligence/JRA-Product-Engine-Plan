@@ -20,6 +20,8 @@ Rebuild with `python scripts/build.py --stage 4`. Validate with `python scripts/
 
 ## Working features
 
+The visual workbench follows one connected journey: idea, sample, people, costs, offer, continued use and a whole-plan review. Save-and-continue actions retain each draft, earlier choices appear in the next relevant step, and a live product summary lets visitors revisit decisions. Detailed fields stay available in expandable sections. The route is optional; its indicators describe notes started, never completed products or approved agreements. Existing browser records and backups retain their fields.
+
 Optional suggestions follow the editable product name and brief through each workbench section. Visitors can add an idea to a field, prepare a connection draft, choose a different suggestion direction or write their own. The curated suggestions run locally; they are not exhaustive, do not verify suitability and never supply prices or automatically overwrite a record.
 
 Create blank products or start from any of the nine source case studies. Keep brief, making, offers, costs, community participation, circular-use records, contributions and agent scopes together. Product references are stable, connections are many-to-many and no parent or authority is required. New revisions retain earlier field and connection snapshots.
