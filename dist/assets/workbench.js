@@ -34,7 +34,7 @@ try{const saved=localStorage.getItem(KEY);if(saved)data=validateImport(JSON.pars
 function persist(){try{if(!storageOK)throw Error('Existing unreadable storage has been preserved. Export your current work as a backup.');localStorage.setItem(KEY,JSON.stringify(data));return true}catch(e){status('Your work is open but could not be saved on this device. Download a backup now. '+e.message);return false}}
 function readForm(){return Object.fromEntries(fields.map(k=>[k,form.elements.namedItem(k).value]))}
 function refreshSelect(){const current=active?.id;$('record-select').innerHTML='<option value="">Choose a saved product</option>'+data.records.map(r=>`<option value="${esc(r.id)}">${esc(r.fields.name||'Untitled product')}</option>`).join('');$('record-select').value=current||'';$('link-target').innerHTML='<option value="">No saved product selected</option>'+data.records.filter(r=>r.id!==current).map(r=>`<option value="${esc(r.id)}">${esc(r.fields.name||'Untitled product')}</option>`).join('');}
-function showRecord(r){active=r;dirty=false;$('empty-state').hidden=!!r;$('editor').hidden=!r;refreshSelect();if(!r)return;for(const k of fields)form.elements.namedItem(k).value=r.fields[k]??'';$('record-heading').textContent=r.fields.name||'Untitled product';$('record-meta').textContent=`Version ${r.version} · ${r.id}`;$('case-notice').hidden=!r.caseKey;$('case-notice').textContent='Case study starting brief. These are planning ideas from the source document, not confirmed products, results, costs or commitments. Edit them to reflect your own work.';renderLinks();renderHistory();calculate();}
+function showRecord(r){active=r;dirty=false;$('empty-state').hidden=!!r;$('editor').hidden=!r;refreshSelect();if(!r)return;for(const k of fields)form.elements.namedItem(k).value=r.fields[k]??'';$('record-heading').textContent=r.fields.name||'Untitled product';$('record-meta').textContent=`Version ${r.version} · ${r.id}`;$('case-notice').hidden=!r.caseKey;$('case-notice').textContent='Case study starting brief. These are planning ideas from the source document, not confirmed products, results, costs or commitments. Edit them to reflect your own work.';renderLinks();renderHistory();calculate();renderSuggestions();}
 function canLeave(){return !dirty||confirm('There are unsaved edits. Leave this record and discard those edits?')}
 function createRecord(caseKey=''){if(!canLeave())return;const now=new Date().toISOString();const r={id:uid(),version:1,created:now,updated:now,caseKey,fields:{...blank(),...(cases[caseKey]||{})},links:[],history:[]};data.records.push(r);showRecord(r);const ok=persist();if(ok)status(caseKey?'Case study opened as your own editable record.':'Blank product created. Add a name and make it yours.');$('name').focus();}
 function save(){if(!active)return false;const invalid=[...form.elements].find(e=>e.willValidate&&!e.validity.valid);if(invalid){const panel=invalid.closest('[role=tabpanel]');if(panel)setTab(panel.id.replace('panel-',''));invalid.reportValidity();status('Check the highlighted fields before saving.');return false}const f=readForm();if(!f.name.trim()){status('Give your product a name before saving.');$('name').focus();return false}if(dirty){active.history.push({version:active.version,at:active.updated,fields:{...active.fields},links:structuredClone(active.links)});active.version++;active.fields=f;active.updated=new Date().toISOString();dirty=false;}const ok=persist();showRecord(active);if(ok)status('Saved on this device. Download a backup to keep another copy.');return true;}
@@ -48,8 +48,42 @@ function pack(r){const f=r.fields,v=costValues(f);let out=`# ${f.name||'Untitled
  out+='\n## Cost comparison\n\n'+(v?`Variable cost per item: ${money.format(v.unit)}\nContribution per item: ${money.format(v.contribution)}\nBatch result after setup: ${money.format(v.batch)}\nUnits to cover setup: ${v.breakEven??'Not reached'}\nAll figures are estimates in AUD before tax and financing.\n`:'Incomplete: unknown figures have not been treated as zero.\n');
  out+='\n## Connected contributions\n\n'+(r.links.length?r.links.map(l=>`${l.name}: ${l.role}\nTerms: ${l.terms||'To be agreed'}\nProduct reference: ${l.target||'Not linked'}\nSource: ${l.url||'To be provided'}\n`).join('\n'):'No connections recorded.\n');
  out+='\n## Release checklist\n\n- Review the actual sample and agreed specification.\n- Confirm the maker, quotations, permitted artwork use and credits.\n- Confirm the offer, fulfilment, terms and relevant product checks.\n- Agree the destinations and scope before publishing.\n- Record the actual result and feed it into the next version.\n\nPrepared with the JRA Product Engine. Your entered outputs belong to you.\n';return out;}
-function setTab(key,focus=false){document.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab===key;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;$(`panel-${b.dataset.tab}`).hidden=!on;if(on&&focus)b.focus();});}
+function fieldLabel(key){return form.elements.namedItem(key)?.closest('label')?.querySelector('span')?.textContent||key;}
+function renderSuggestions(){
+ if(!active||!window.JRAIdeas)return;
+ const tabKey=document.querySelector('[data-tab][aria-selected=true]')?.dataset.tab||'brief';
+ const box=$('ideas-'+tabKey),f=readForm(),result=JRAIdeas.suggest(f,active.caseKey,tabKey);
+ const expanded=box.querySelector('details')?.open;
+ const renderItem=(item,index)=>{
+  const added=item.field!=='connection'&&(f[item.field]||'').includes(item.text);
+  const destination=item.field==='connection'?'connection draft':fieldLabel(item.field);
+  return `<article class="idea"><h3>${esc(item.title)}</h3><p>${esc(item.text)}</p><button type="button" class="idea-add" data-idea="${index}" data-idea-tab="${tabKey}"${added?' disabled':''}>${added?'Added':item.field==='connection'?'Prepare connection':'Add idea'}<span class="sr-only">: ${esc(item.title)} to ${esc(destination)}</span></button><span class="idea-destination">${esc(destination)}</span></article>`;
+ };
+ const context=result.labels.length?'Related to '+result.labels.join(' and ')+'.':'Add a product name and brief to find more relevant ideas.';
+ box.innerHTML=`<h3>Ideas to explore</h3><p class="ideas-context">${esc(context)} Optional starting points, not a complete list. Choose what helps, change it or add your own.</p><div class="idea-list">${result.items.slice(0,2).map(renderItem).join('')}</div>${result.items.length>2?`<details${expanded?' open':''}><summary>More ideas (${result.items.length-2})</summary><div class="idea-list">${result.items.slice(2).map((item,index)=>renderItem(item,index+2)).join('')}</div></details>`:''}`;
+}
+form.addEventListener('click',event=>{
+ const button=event.target.closest('[data-idea]');if(!button||!active)return;
+ const result=JRAIdeas.suggest(readForm(),active.caseKey,button.dataset.ideaTab);
+ const item=result.items[Number(button.dataset.idea)];if(!item)return;
+ if(item.field==='connection'){
+  const name=$('link-name'),role=$('link-role');
+  name.value=JRAIdeas.append(name.value,item.title).replace(/\n+/g,'; ');
+  role.value=JRAIdeas.append(role.value,item.text).replace(/\n+/g,'; ');
+  $('link-terms').value=JRAIdeas.append($('link-terms').value,'Possible connection only. Participation and terms remain to be agreed.');
+  name.focus();status('Connection idea prepared. Edit it, then use Add connection when ready.');return;
+ }
+ const input=form.elements.namedItem(item.field);if(!input)return;
+ const appended=JRAIdeas.append(input.value,item.text);
+ input.value=input.tagName==='INPUT'?appended.replace(/\n+/g,'; '):appended;dirty=true;
+ const panel=input.closest('[role=tabpanel]');if(panel)setTab(panel.id.replace('panel-',''));
+ input.focus();status(`Idea added to ${fieldLabel(item.field).toLowerCase()}. Edit it freely, then save your record.`);
+});
+function setTab(key,focus=false){document.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab===key;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;$(`panel-${b.dataset.tab}`).hidden=!on;if(on&&focus)b.focus();});renderSuggestions();}
 document.querySelectorAll('[data-tab]').forEach(b=>{b.addEventListener('click',()=>setTab(b.dataset.tab));b.addEventListener('keydown',e=>{const tabs=[...document.querySelectorAll('[data-tab]')];let i=tabs.indexOf(b);if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();i=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowRight'||e.key==='ArrowDown'?1:-1)+tabs.length)%tabs.length;setTab(tabs[i].dataset.tab,true)}})});
+let ideasTimer;
+form.addEventListener('input',event=>{if(['name','intention','specification','ideasFocus'].includes(event.target.name)){clearTimeout(ideasTimer);ideasTimer=setTimeout(renderSuggestions,250)}});
+form.addEventListener('change',event=>{if(event.target.name==='ideasFocus')renderSuggestions()});
 form.addEventListener('submit',e=>{e.preventDefault();save()});form.addEventListener('input',()=>{dirty=true;status('Unsaved edits. Save the record or export your work before leaving.');calculate()});
 $('new-record').addEventListener('click',()=>createRecord());$('empty-new').addEventListener('click',()=>createRecord());$('open-case').addEventListener('click',()=>{const key=$('case-select').value;if(!key){status('Choose a case study first.');$('case-select').focus();return}createRecord(key)});
 $('record-select').addEventListener('change',e=>{if(canLeave())showRecord(data.records.find(r=>r.id===e.target.value)||null);else e.target.value=active?.id||''});

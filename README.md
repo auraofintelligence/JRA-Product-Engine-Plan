@@ -20,6 +20,8 @@ Rebuild with `python scripts/build.py --stage 4`. Validate with `python scripts/
 
 ## Working features
 
+Optional suggestions follow the editable product name and brief through each workbench section. Visitors can add an idea to a field, prepare a connection draft, choose a different suggestion direction or write their own. The curated suggestions run locally; they are not exhaustive, do not verify suitability and never supply prices or automatically overwrite a record.
+
 Create blank products or start from any of the nine source case studies. Keep brief, making, offers, costs, community participation, circular-use records, contributions and agent scopes together. Product references are stable, connections are many-to-many and no parent or authority is required. New revisions retain earlier field and connection snapshots.
 
 Records are stored locally in the browser, with Markdown release packs and JSON backup/import. No backend receives product data. The optional read-only WebMCP tool returns the current record to an explicitly invoked browser agent where supported. Fonts are served by Google Fonts, and normal hosting access logs may exist.

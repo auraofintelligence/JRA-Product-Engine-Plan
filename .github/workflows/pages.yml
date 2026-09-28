@@ -24,6 +24,8 @@ jobs:
           node --check dist/assets/site.js
           node --check dist/assets/workbench.js
           node scripts/test-workbench.cjs
+          node --check dist/assets/suggestions.js
+          node scripts/test-suggestions.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
