@@ -19,7 +19,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate site
-        run: python scripts/check.py
+        run: |
+          python scripts/check.py
+          node --check dist/assets/site.js
+          node --check dist/assets/workbench.js
+          node scripts/test-workbench.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

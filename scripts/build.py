@@ -31,7 +31,7 @@ if args.stage>=3:
 if args.stage>=4:
     exec((ROOT/'scripts'/'connections.py').read_text(encoding='utf-8'))
 
-licence=(ROOT.parent/'STRANGE_BUT_TRUE_LICENCE_TEMPLATE.md').read_text(encoding='utf-8').replace('[YEAR]','2026').replace('[PROJECT_NAME]','JRA Product Engine Plan').replace('[PROJECT_URL]',REPO)
+licence=(ROOT/'LICENSE.md').read_text(encoding='utf-8').replace('[YEAR]','2026').replace('[PROJECT_NAME]','JRA Product Engine Plan').replace('[PROJECT_URL]',REPO)
 (ROOT/'LICENSE.md').write_text(licence,encoding='utf-8')
 (DIST/'LICENSE.md').write_text(licence,encoding='utf-8')
 licence_body=''.join(f'<h2>{escape(line[3:])}</h2>' if line.startswith('## ') else f'<h1>{escape(line[2:])}</h1>' if line.startswith('# ') else f'<p>{escape(line[2:] if line.startswith("- ") else line)}</p>' for line in licence.splitlines() if line.strip())

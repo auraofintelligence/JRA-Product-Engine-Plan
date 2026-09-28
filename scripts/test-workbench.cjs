@@ -1,0 +1,21 @@
+// Regression checks for the calculations and untrusted backup boundary.
+const fs=require('node:fs');const vm=require('node:vm');const assert=require('node:assert/strict');
+const path=require('node:path');const root=path.resolve(__dirname,'..');
+const source=fs.readFileSync(path.join(root,'dist/assets/workbench.js'),'utf8');
+const html=fs.readFileSync(path.join(root,'dist/workbench.html'),'utf8');
+const fields=[...html.matchAll(/<(?:input|textarea|select)[^>]* name="([^"]+)"/g)].map(m=>m[1]);
+const numbers=['materialsCost','labourCost','packagingCost','freightCost','otherCost','price','fixedCost','feePercent','quantity','sent','returned'];
+const context=vm.createContext({fields,numberFields:numbers,cases:{'aura-undies':{}},URL,blank:()=>Object.fromEntries(fields.map(k=>[k,k==='permissionStatus'?'draft':''])),safeURL:s=>{try{const u=new URL(s);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}}});
+vm.runInContext(source.slice(source.indexOf('function validateImport('),source.indexOf('\ntry{const saved'))+'\n'+source.slice(source.indexOf('function costValues('),source.indexOf('\nfunction calculate(')),context);
+const f={materialsCost:'5',labourCost:'4',packagingCost:'1',freightCost:'2',otherCost:'1',price:'25',fixedCost:'100',feePercent:'4',quantity:'50'};
+const v=context.costValues(f);assert.equal(v.unit,14);assert.equal(v.contribution,11);assert.equal(v.batch,450);assert.equal(v.breakEven,10);
+assert.equal(context.costValues({...f,price:''}),null);assert.equal(context.costValues({...f,quantity:'1.5'}),null);assert.equal(context.costValues({...f,feePercent:'101'}),null);assert.equal(context.costValues({...f,price:'Infinity'}),null);assert.equal(context.costValues({...f,labourCost:'-1'}),null);
+assert.equal(context.costValues({...f,price:'1'}).breakEven,null);
+const record={id:'test-product',version:1,fields:{...context.blank(),...f,name:'QA product'},links:[],history:[]};
+const backup={schema:1,records:[record]};assert.equal(context.validateImport(backup).records[0].fields.name,'QA product');
+assert.throws(()=>context.validateImport({schema:2,records:[]}));assert.throws(()=>context.validateImport({schema:1,records:[record,record]}));assert.throws(()=>context.validateImport({schema:1,records:[{...record,fields:{...record.fields,quantity:'1.5'}}]}));
+const link={id:'link',name:'Sample source',role:'Material',terms:'To be agreed',url:'javascript:alert(1)'};
+assert.equal(context.validateImport({schema:1,records:[{...record,links:[link]}]}).records[0].links[0].url,'');
+const snapshot={version:1,at:'2026-09-28',fields:record.fields,links:[{...link,url:'https://example.com/'}]};
+assert.equal(context.validateImport({schema:1,records:[{...record,version:2,history:[snapshot]}]}).records[0].history[0].links[0].url,'https://example.com/');
+console.log('PASS: costing, missing and invalid figures, break-even, backup round-trip, schema, duplicate references, safe links and version snapshots');
